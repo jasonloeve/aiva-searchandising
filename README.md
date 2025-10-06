@@ -1,4 +1,4 @@
-# 🧴 AIVA Searchandising - AI-Powered Search & Merchandising for eCommerce
+# AIVA Searchandising - AI-Powered Search & Merchandising for eCommerce
 
 [![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -767,7 +767,6 @@ Required for:
 ## 📞 Support
 
 For issues or questions:
-- 📧 Email: support@your-company.com
 - 🐛 GitHub Issues: [https://github.com/jasonloeve/aiva-searchandising/issues](https://github.com/jasonloeve/aiva-searchandising/issues)
 
 ---
