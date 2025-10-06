@@ -1,0 +1,29 @@
+services:
+  # Database service PostgresSQL image
+  database:
+    # image: postgres:latest
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: catalog
+    ports:
+      - "5432:5432"
+    volumes:
+      - database:/var/lib/postgresql/data
+
+  # Backend service
+  backend:
+    build: .
+    image: aiva-backend:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - database
+    env_file:
+      - ./.env
+
+volumes:
+  database:
+    name: aiva_database_data
+

@@ -1,0 +1,159 @@
+# License
+
+This software is available under a dual-license model:
+
+## 1. Non-Commercial License (Default)
+
+Copyright (c) 2025 Jason Loeve
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use,
+copy, modify, and distribute the Software for **non-commercial purposes only**,
+subject to the following conditions:
+
+### Permitted Uses:
+- ✅ Personal projects and learning
+- ✅ Academic research and education
+- ✅ Portfolio demonstrations with authors permission
+- ✅ Open-source contributions
+- ✅ Non-profit organizations
+
+### Restrictions:
+- ❌ **Commercial use is strictly prohibited** without a Commercial License
+- ❌ Selling, renting, or leasing the Software
+- ❌ Using the Software in production for revenue-generating applications
+- ❌ Incorporating the Software into commercial products or services
+- ❌ Using the Software to provide paid services to third parties
+
+### Attribution:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## 2. Commercial License
+
+**If you wish to use this software for commercial purposes**, you must obtain
+a Commercial License.
+
+### Commercial use includes, but is not limited to:
+- Using the software in a revenue-generating application
+- Incorporating the software into a commercial product or service
+- Using the software to provide paid services to customers
+- Deploying the software in a production environment for business purposes
+- Using the software in any way that generates direct or indirect revenue
+
+### Licensing Options:
+
+#### Option A: One-Time License Fee
+- **Startup (< $1M revenue/year):** $5,000 USD one-time
+- **Small Business ($1M-$10M revenue/year):** $15,000 USD one-time
+- **Enterprise (> $10M revenue/year):** $50,000 USD one-time
+
+Includes:
+- ✅ Perpetual commercial usage rights
+- ✅ 1 year of updates and bug fixes
+- ✅ Email support (business hours)
+- ✅ Deployment assistance
+
+#### Option B: Monthly Subscription
+- **Startup:** $500/month
+- **Small Business:** $1,500/month
+- **Enterprise:** $5,000/month
+
+Includes:
+- ✅ Commercial usage rights (cancel anytime)
+- ✅ Continuous updates and new features
+- ✅ Custom feature requests (Enterprise only)
+- ✅ On-call support (Enterprise only)
+
+### How to Obtain a Commercial License:
+
+📧 **Email:** jasonloeve@gmail.com
+
+Please include:
+- Company name and size
+- Intended use case
+- Expected deployment scale (users, requests/month)
+- Preferred licensing option (A or B)
+
+We'll respond within 2 business days with a formal license agreement.
+
+---
+
+## 3. What Constitutes "Commercial Use"?
+
+### ✅ Examples of Commercial Use (requires license):
+- E-commerce stores using this for product recommendations
+- SaaS platforms incorporating this AI functionality
+- Agencies building client solutions with this software
+- Consulting firms deploying this for clients
+- Any use where the software directly or indirectly generates revenue
+
+### ✅ Examples of Non-Commercial Use (free):
+- A student using this for a thesis project
+- A developer showcasing this in their portfolio
+- A researcher studying AI recommendation systems
+- A non-profit using this for internal operations
+- An open-source contributor improving the codebase
+
+### ❓ Not Sure?
+Contact us at jasonloeve@gmail.com and we'll help you determine which license applies.
+
+---
+
+## 4. Enforcement
+
+Unauthorized commercial use of this software is a violation of copyright law
+and will result in:
+- Immediate cease and desist notice
+- Legal action to recover damages and legal fees
+- Permanent ban from future licensing
+
+We actively monitor for commercial deployments through:
+- Public repository analysis
+- Web crawling and API fingerprinting
+- Community reports
+
+**Play fair.** We offer reasonable pricing and work with startups on flexible terms.
+
+---
+
+## 5. Frequently Asked Questions
+
+**Q: Can I use this for my portfolio?**
+A: Yes! Portfolio demonstrations are non-commercial use, we require to request permission first.
+
+**Q: What if I'm a solo developer building a side project?**
+A: If your side project generates revenue, you need a commercial license.
+We offer startup pricing for small projects.
+
+**Q: Can I fork and modify the code?**
+A: Yes for non-commercial purposes. Commercial use of modified code still
+requires a license.
+
+**Q: What if I'm already using this commercially?**
+A: Contact us immediately at jasonloeve@gmail.com. We'll work with you
+on retroactive licensing with fair terms.
+
+**Q: Can I resell this software?**
+A: No. Reselling requires a separate partnership/reseller agreement.
+
+**Q: What about open-source contributions?**
+A: Contributions are welcome! By contributing, you agree to license your
+contributions under the same dual-license terms.
+
+---
+
+**Last Updated:** October 2025
+
+**Note:** This license agreement may be updated from time to time. Continued
+use of the software constitutes acceptance of the current license terms.
