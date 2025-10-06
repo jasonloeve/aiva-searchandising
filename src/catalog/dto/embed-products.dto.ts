@@ -1,9 +1,3 @@
-// export class EmbedProductsResponseDto {
-//   message: string;
-//   productsProcessed: number;
-//   errors?: string[];
-// }
-
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class EmbedProductsResponseDto {

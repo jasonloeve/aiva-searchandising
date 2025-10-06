@@ -1,11 +1,9 @@
-// src/routine/routine.controller.ts
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { RoutineService } from './routine.service';
 import { HairProfileDto } from '../hair-profile/dto/hair-profile.dto';
 import { RoutineStep } from './interfaces/routine-step.interface';
 import { ApiKeyGuard } from '../common/guards/api-key.guard';
-
 
 interface RoutineResponse {
   message: string;

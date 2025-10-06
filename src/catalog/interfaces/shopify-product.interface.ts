@@ -1,31 +1,3 @@
-// export interface ShopifyProductNode {
-//   id: string;
-//   title: string;
-//   description: string;
-//   productType: string;
-//   tags: string[];
-//   images: {
-//     edges: Array<{
-//       node: {
-//         url: string;
-//       };
-//     }>;
-//   };
-//   variants: {
-//     edges: Array<{
-//       node: {
-//         price: string;
-//       };
-//     }>;
-//   };
-// }
-
-// export interface ShopifyGraphQLResponse {
-//   products: {
-//     nodes: ShopifyProductNode[];
-//   };
-// }
-
 export interface ShopifyProductNode {
   id: string;
   title: string;
