@@ -16,7 +16,7 @@ An intelligent backend API that generates personalized hair care routines using 
 
 ---
 
-## 🎯 What It Does
+## What It Does
 
 Transform generic product catalogs into personalized shopping experiences:
 
@@ -58,26 +58,26 @@ Customer Input → AI Analysis → Personalized Routine → Product Recommendati
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🔍 **Semantic Product Search**
+### **Semantic Product Search**
 - **Vector embeddings** with OpenAI `text-embedding-3-small`
 - **pgvector** for cosine similarity search across 7000+ products
 - Find products by meaning, not just keywords (e.g., "frizzy hair" matches "smoothing serum")
 
-### 🤖 **AI-Powered Recommendations**
+### **AI-Powered Recommendations**
 - Personalized routine generation with **GPT-4o-mini**
 - Context-aware product filtering (cleansers, conditioners, treatments)
 - Smart product matching based on hair type, concerns, and goals
 
-### 🛡️ **Production-Ready Security**
+### **Production-Ready Security**
 - **API key authentication** with multiple header format support
 - **Rate limiting** (5 req/min for routines, 1 req/hour for bulk operations)
 - **Input validation** with `class-validator`
 - **CORS** and **Helmet** security headers
 - **SQL injection protection** with Prisma parameterized queries
 
-### 🚀 **Optimized for Scale**
+### **Optimized for Scale**
 - **Daily product sync** from Shopify (cost-optimized vs. real-time)
 - **Containerized** for GCP Cloud Run deployment
 - **Stateless design** for horizontal scaling
@@ -85,12 +85,12 @@ Customer Input → AI Analysis → Personalized Routine → Product Recommendati
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────┐
-│   Shopify Hydrogen Storefront           │
-│   (Form)                      │
+│   Storefront                            │
+│   (Form)                                │
 └──────────────┬──────────────────────────┘
                │ POST /routine
                ↓
@@ -129,7 +129,7 @@ Customer Input → AI Analysis → Personalized Routine → Product Recommendati
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Category | Technology |
 |----------|-----------|
@@ -145,7 +145,7 @@ Customer Input → AI Analysis → Personalized Routine → Product Recommendati
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 
@@ -184,7 +184,7 @@ PORT=3000
 SHOPIFY_STORE_DOMAIN="your-store.myshopify.com"
 SHOPIFY_ADMIN_TOKEN="shpat_xxxxxxxxxxxxx"
 SHOPIFY_API_VERSION="2025-07"
-SHOPIFY_SALES_CHANNEL_ID="gid://shopify/Publication/xxxxx"
+SHOPIFY_SALES_CHANNEL_ID="xxxxx"
 
 # OpenAI
 OPENAI_API_KEY="sk-xxxxxxxxxxxxx"
@@ -206,9 +206,6 @@ npx prisma generate
 
 # Run migrations
 npx prisma migrate deploy
-
-# (Optional) Seed with initial data
-npx prisma db seed
 ```
 
 ### 5. Initial Product Sync
@@ -227,7 +224,7 @@ curl -X POST http://localhost:3000/catalog/embed-products \
 
 ---
 
-## 🚀 Running the Application
+## Running the Application
 
 ### Development
 
@@ -260,9 +257,9 @@ docker run -p 8080:8080 --env-file .env aiva-backend
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
-### 🔓 Public Endpoints
+### Public Endpoints
 
 #### `GET /catalog/products/search`
 Search products by semantic similarity.
@@ -299,7 +296,7 @@ curl "http://localhost:3000/catalog/products/category/shampoo"
 
 ---
 
-### 🔐 Protected Endpoints (Require API Key)
+### Protected Endpoints (Require API Key)
 
 #### `POST /routine`
 Generate personalized hair care routine.
@@ -370,7 +367,7 @@ x-api-key: your-api-key
 
 ---
 
-### 🔧 Administrative Endpoints
+### Administrative Endpoints
 
 #### `GET /catalog/products/shopify`
 Fetch products directly from Shopify (bypasses DB).
@@ -378,7 +375,7 @@ Fetch products directly from Shopify (bypasses DB).
 #### `GET /catalog/publications/shopify`
 List Shopify sales channels.
 
-#### `GET /health`
+#### `GET /health` * NOTE - to be built out
 Health check for monitoring.
 
 ```bash
@@ -396,7 +393,7 @@ curl http://localhost:3000/health
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Unit Tests
 
@@ -433,7 +430,7 @@ npm run test:e2e
 
 ---
 
-## 🚢 Deployment (GCP)
+## Deployment (GCP)
 
 ### 1. Build & Push Docker Image
 
@@ -491,7 +488,7 @@ gcloud scheduler jobs create http daily-product-sync \
 
 ---
 
-## 💰 Cost Estimation
+## Cost Estimation
 
 **Monthly costs for 10,000 routine requests:**
 
@@ -511,7 +508,7 @@ gcloud scheduler jobs create http daily-product-sync \
 
 ---
 
-## 📊 Performance
+## Performance
 
 **Benchmarks (7,000 products):**
 
@@ -528,7 +525,7 @@ gcloud scheduler jobs create http daily-product-sync \
 
 ---
 
-## 🔐 Security
+## Security
 
 ### Authentication
 - **API Key** via `x-api-key` header or `Authorization: Bearer` header
@@ -555,7 +552,7 @@ gcloud scheduler jobs create http daily-product-sync \
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Document                                                         | Description |
 |------------------------------------------------------------------|-------------|
@@ -566,12 +563,12 @@ gcloud scheduler jobs create http daily-product-sync \
 
 ---
 
-## 🤝 Integration with Shopify Hydrogen
+## Integration with Shopify Hydrogen (Remix)
 
 ### Frontend Example
 
 ```typescript
-// routes/hair-quiz.tsx (Shopify Hydrogen)
+// routes/concerns.tsx (Shopify Hydrogen)
 export async function action({ request, context }) {
   const formData = await request.formData();
 
@@ -604,7 +601,7 @@ export async function action({ request, context }) {
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### "pgvector extension not found"
 
@@ -652,7 +649,7 @@ gcloud run services update aiva-virtual-stylist --timeout=300
 
 ---
 
-## 📈 Monitoring
+## Monitoring
 
 ### Cloud Logging
 
@@ -663,7 +660,7 @@ All logs automatically sent to Cloud Logging:
 gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=aiva-searchandising" --limit 50
 ```
 
-### Health Checks
+### Health Checks * To be built / tested
 
 Configure uptime checks in Cloud Monitoring:
 
@@ -683,7 +680,7 @@ Alert: Email on 3 consecutive failures
 
 ---
 
-## 🛣️ Roadmap
+## Roadmap
 
 ### Phase 1 (Current)
 - ✅ Vector similarity search
@@ -698,14 +695,13 @@ Alert: Email on 3 consecutive failures
 - [ ] Analytics dashboard
 
 ### Phase 3 (Future)
-- [ ] Multi-language support
 - [ ] User feedback loop
 - [ ] Routine effectiveness tracking
 - [ ] Advanced personalization (purchase history)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
@@ -715,38 +711,38 @@ Alert: Email on 3 consecutive failures
 
 ---
 
-## 📄 License
+## License
 
 ### ⚠️ Dual License Model
 
 This software is available under a **dual-license model**:
 
-#### 🆓 Non-Commercial Use - FREE
+#### Non-Commercial Use - FREE
 Perfect for:
-- 🎓 Students and researchers
-- 💼 Portfolio demonstrations
-- 🧪 Testing and learning
-- 🌐 Open-source contributions
+- Students and researchers
+- Portfolio demonstrations * Permission required
+- Testing and learning
+- Open-source contributions
 
-#### 💰 Commercial Use - Requires License
+#### Commercial Use - Requires License
 Required for:
-- 🏪 E-commerce stores (production)
-- 💼 SaaS products and services
-- 🏢 Business applications
-- 💵 Revenue-generating deployments
+- E-commerce stores (production)
+- SaaS products and services
+- Business applications
+- Revenue-generating deployments
 
 **Pricing:** From $500/month or $5,000 one-time
 
-📖 **Read the full license terms:**
+**Read the full license terms:**
 - [LICENSE](LICENSE) - Complete dual-license agreement
 - [NOTICE.md](NOTICE.md) - Quick reference guide
 - [COMMERCIAL-LICENSE-AGREEMENT.md](COMMERCIAL-LICENSE-AGREEMENT.md) - Commercial contract template
 
-**🚨 IMPORTANT:** Using this software commercially without a proper license constitutes copyright infringement and will be enforced.
+**⚠️ IMPORTANT:** Using this software commercially without a proper license constitutes copyright infringement and will be enforced.
 
 ---
 
-## 👤 Author
+## Author
 
 **Jason Loeve**
 - LinkedIn: [linkedin.com/in/jason-loeve-6526a749](https://linkedin.com/in/jason-loeve-6526a749)
@@ -754,7 +750,7 @@ Required for:
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **NestJS** - Progressive Node.js framework
 - **OpenAI** - GPT and embedding models
@@ -764,10 +760,10 @@ Required for:
 
 ---
 
-## 📞 Support
+## Support
 
 For issues or questions:
-- 🐛 GitHub Issues: [https://github.com/jasonloeve/aiva-searchandising/issues](https://github.com/jasonloeve/aiva-searchandising/issues)
+- GitHub Issues: [https://github.com/jasonloeve/aiva-searchandising/issues](https://github.com/jasonloeve/aiva-searchandising/issues)
 
 ---
 
