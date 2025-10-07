@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
-export class OpenAIException extends HttpException {
+export class ErrorResponseException extends HttpException {
   constructor(message: string, originalError?: Error) {
     super(
       {

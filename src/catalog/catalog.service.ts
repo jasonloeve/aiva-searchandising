@@ -12,7 +12,7 @@ import {
   ShopifyPublicationGraphQLResponse,
   ShopifyPublication,
 } from './interfaces/shopify-product.interface';
-import { OpenAIException, ShopifyException, ProductNotFoundException } from '../common/exceptions/openai.exception';
+import { ErrorResponseException, ShopifyException, ProductNotFoundException } from '../common/exceptions/error-response.exception';
 
 @Injectable()
 export class CatalogService {
@@ -329,7 +329,7 @@ export class CatalogService {
 
       // Check if it's an OpenAI error
       if (error.message?.includes('OpenAI') || error.name === 'APIError') {
-        throw new OpenAIException('Failed to generate embedding for search', error);
+        throw new ErrorResponseException('Failed to generate embedding for search', error);
       }
 
       throw new HttpException(

@@ -4,7 +4,7 @@ import { RoutineStep, RoutineResponse } from './interfaces/routine-step.interfac
 import { CatalogService } from '../catalog/catalog.service';
 import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
-import { OpenAIException, ProductNotFoundException } from '../common/exceptions/openai.exception';
+import { ErrorResponseException, ProductNotFoundException } from '../common/exceptions/error-response.exception';
 
 @Injectable()
 export class RoutineService {
@@ -83,13 +83,13 @@ export class RoutineService {
       this.logger.error('Failed to generate routine', error);
 
       // Re-throw known exceptions
-      if (error instanceof ProductNotFoundException || error instanceof OpenAIException) {
+      if (error instanceof ProductNotFoundException || error instanceof ErrorResponseException) {
         throw error;
       }
 
       // Handle OpenAI specific errors
       if (error.name === 'APIError' || error.message?.includes('OpenAI')) {
-        throw new OpenAIException('Failed to generate routine description', error);
+        throw new ErrorResponseException('Failed to generate routine description', error);
       }
 
       // Generic error
@@ -154,7 +154,7 @@ export class RoutineService {
       return content;
     } catch (error) {
       this.logger.error(`Failed to generate description for step: ${step}`, error);
-      throw new OpenAIException(`Failed to generate ${step} description`, error);
+      throw new ErrorResponseException(`Failed to generate ${step} description`, error);
     }
   }
 }

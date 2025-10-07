@@ -24,7 +24,7 @@ All errors are caught by a global exception filter that provides consistent erro
 
 Custom exceptions provide better context for specific error scenarios:
 
-**Location:** [common/exceptions/openai.exception.ts](src/common/exceptions/openai.exception.ts)
+**Location:** [common/exceptions/error-response.exception.ts](src/common/exceptions/error-response.exception.ts)
 
 #### OpenAIException
 Thrown when OpenAI API calls fail.

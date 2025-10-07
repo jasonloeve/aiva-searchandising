@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { RoutineService } from './routine.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { HairProfileDto } from '../hair-profile/dto/hair-profile.dto';
-import { ProductNotFoundException, OpenAIException } from '../common/exceptions/openai.exception';
+import { ProductNotFoundException, ErrorResponseException } from '../common/exceptions/error-response.exception';
 
 describe('RoutineService', () => {
   let service: RoutineService;

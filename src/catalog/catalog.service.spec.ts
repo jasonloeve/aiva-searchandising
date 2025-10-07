@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { of, throwError } from 'rxjs';
 import { CatalogService } from './catalog.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ShopifyException, OpenAIException } from '../common/exceptions/openai.exception';
+import { ShopifyException, ErrorResponseException } from '../common/exceptions/error-response.exception';
 
 describe('CatalogService', () => {
   let service: CatalogService;
@@ -254,7 +254,7 @@ describe('CatalogService', () => {
 
       await expect(
         service.searchProductsBySimilarity('test query', 10),
-      ).rejects.toThrow(OpenAIException);
+      ).rejects.toThrow(ErrorResponseException);
     });
 
     it('should handle database errors during similarity search', async () => {
