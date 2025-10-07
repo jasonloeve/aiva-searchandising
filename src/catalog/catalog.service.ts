@@ -1,3 +1,4 @@
+// @TODO - To be separated and simplified.
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
@@ -12,7 +13,7 @@ import {
   ShopifyPublicationGraphQLResponse,
   ShopifyPublication,
 } from './interfaces/shopify-product.interface';
-import { ErrorResponseException, ShopifyException, ProductNotFoundException } from '../common/exceptions/error-response.exception';
+import { ErrorResponseException, ShopifyException } from '../common/exceptions/error-response.exception';
 
 @Injectable()
 export class CatalogService {
@@ -44,7 +45,7 @@ export class CatalogService {
   }
 
   // /** Fetch all Shopify channel IDs (publications) */
-  // Utility built out to get channel IDs for filtering products by sales channel in the fetchProductsFromShopify method.
+  // @NOTE - Utility built out to get channel IDs for filtering products by sales channel in the fetchProductsFromShopify method.
   async fetchShopifyPublications(): Promise<ShopifyPublication[]> {
     this.logger.log('Fetching channel IDs (publications) from Shopify...');
 
@@ -218,7 +219,6 @@ export class CatalogService {
         }
 
         try {
-
           const now = new Date();
 
           await this.prisma.$executeRaw`
@@ -253,10 +253,8 @@ export class CatalogService {
       if (i + batchSize < products.length) await this.delay(1000);
     }
 
-
     const end = Date.now();
     const totalTime = ((end - start) / 1000).toFixed(2);
-    
 
     const result: EmbedProductsResponseDto = {
       message: `Successfully embedded ${successCount} out of ${products.length} products in ${totalTime}s`,
