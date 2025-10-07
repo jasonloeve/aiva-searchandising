@@ -2,7 +2,7 @@ import { ShopifyProduct } from '../../catalog/interfaces/shopify-product.interfa
 
 export interface RoutineStep {
   step: string;
-  description: string; // Personalized text for this step
+  description: string;
   products: ShopifyProduct[];
 }
 

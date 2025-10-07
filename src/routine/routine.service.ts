@@ -1,3 +1,4 @@
+// @TODO - Need to rework this service, experiment with used prompt, look into adding similarity logging, investigate why some queries are returning a low count, possibly have to look into breaking up request then merge response.
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { HairProfileDto } from '../hair-profile/dto/hair-profile.dto';
 import { RoutineStep, RoutineResponse } from './interfaces/routine-step.interface';
