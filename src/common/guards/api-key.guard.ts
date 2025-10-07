@@ -35,11 +35,13 @@ export class ApiKeyGuard implements CanActivate {
     // 1. x-api-key: your-key-here
     // 2. Authorization: Bearer your-key-here
     const apiKeyHeader = request.headers['x-api-key'];
+
     if (apiKeyHeader) {
       return Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader;
     }
 
     const authHeader = request.headers['authorization'];
+
     if (authHeader && authHeader.startsWith('Bearer ')) {
       return authHeader.substring(7);
     }
