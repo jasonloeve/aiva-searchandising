@@ -131,17 +131,17 @@ Customer Input → AI Analysis → Personalized Routine → Product Recommendati
 
 ## Tech Stack
 
-| Category | Technology |
-|----------|-----------|
-| **Framework** | NestJS 11.x |
-| **Language** | TypeScript 5.x |
-| **Database** | PostgreSQL 16 + pgvector |
-| **ORM** | Prisma 6.x |
+| Category | Technology                            |
+|----------|---------------------------------------|
+| **Framework** | NestJS 11.x                           |
+| **Language** | TypeScript 5.x                        |
+| **Database** | PostgreSQL 18 + pgvector              |
+| **ORM** | Prisma 6.x                            |
 | **AI/ML** | OpenAI API (embeddings + GPT-4o-mini) |
-| **E-commerce** | Shopify Admin API (GraphQL) |
-| **Security** | Helmet, Throttler, class-validator |
-| **Testing** | Jest (unit + E2E) |
-| **Deployment** | Docker, GCP Cloud Run, Cloud SQL |
+| **E-commerce** | Shopify Admin API (GraphQL)           |
+| **Security** | Helmet, Throttler, class-validator    |
+| **Testing** | Jest (unit + E2E)                     |
+| **Deployment** | Docker, GCP Cloud Run, Cloud SQL      |
 
 ---
 
@@ -150,28 +150,19 @@ Customer Input → AI Analysis → Personalized Routine → Product Recommendati
 ### Prerequisites
 
 - **Node.js** 20.x or higher
-- **PostgreSQL** 16.x with pgvector extension
+- **PostgreSQL** 18.x with pgvector extension
 - **Shopify Store** with Admin API access
 - **OpenAI API Key**
 
 ### 1. Clone & Install
 
 ```bash
-git clone <repository-url>
-cd backend/source
+gh repo clone jasonloeve/aiva-searchandising
+cd aiva-searchandising
 npm install
 ```
 
-### 2. Database Setup
-
-```bash
-# Install pgvector extension
-psql -U postgres -d your_database
-
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-### 3. Environment Configuration
+### 2. Environment Configuration
 
 Copy `.env.example` to `.env` and configure:
 
@@ -198,7 +189,7 @@ THROTTLE_TTL=60000    # 60 seconds
 THROTTLE_LIMIT=10     # 10 requests per window
 ```
 
-### 4. Prisma Setup
+### 3. Prisma Setup
 
 ```bash
 # Generate Prisma Client
@@ -206,6 +197,30 @@ npx prisma generate
 
 # Run migrations
 npx prisma migrate deploy
+
+# or 
+npx prisma migrate dev --name init
+```
+
+### 4. Database Setup - Vector Install
+
+#### Local Docker built using https://github.com/pgvector/pgvector
+
+```bash
+# Check running containers 
+docker ps
+
+docker exec -it your-postgres-container-name psql -U postgres -d catalog 
+
+CREATE EXTENSION vector;
+```
+
+#### Server Cloud - @NOTE to add correct setup steps for GCP
+```bash
+# Install pgvector extension
+psql -U postgres -d your_database
+
+CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
 ### 5. Initial Product Sync
@@ -245,7 +260,7 @@ npm run build
 npm run start:prod
 ```
 
-### Docker
+### Docker - @TODO - Correct guide to docker compose
 
 ```bash
 # Build image
@@ -393,7 +408,7 @@ curl http://localhost:3000/health
 
 ---
 
-## Testing
+## Testing - @NOTE - Add correct tests from private repo
 
 ### Unit Tests
 

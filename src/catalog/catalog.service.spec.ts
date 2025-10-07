@@ -224,33 +224,36 @@ describe('CatalogService', () => {
         },
       ];
 
-      // Mock OpenAI embedding
-      jest.spyOn(service as any, 'openai', 'get').mockReturnValue({
+      (service as any).openai = {
         embeddings: {
           create: jest.fn().mockResolvedValue({
             data: [{ embedding: new Array(1536).fill(0.1) }],
           }),
         },
-      });
+      };
 
       mockPrismaService.$queryRaw.mockResolvedValue(mockProducts);
 
       const result = await service.searchProductsBySimilarity('dry hair shampoo', 10);
 
       expect(result).toEqual(mockProducts);
-      expect(prismaService.$queryRaw).toHaveBeenCalled();
+      expect(mockPrismaService.$queryRaw).toHaveBeenCalled();
+      expect((service as any).openai.embeddings.create).toHaveBeenCalledWith({
+        model: 'text-embedding-3-small',
+        input: 'dry hair shampoo',
+      });
     });
 
     it('should handle OpenAI API errors', async () => {
       // Mock OpenAI error
-      jest.spyOn(service as any, 'openai', 'get').mockReturnValue({
+      (service as any).openai = {
         embeddings: {
           create: jest.fn().mockRejectedValue({
             name: 'APIError',
             message: 'OpenAI API error',
           }),
         },
-      });
+      };
 
       await expect(
         service.searchProductsBySimilarity('test query', 10),
@@ -258,13 +261,13 @@ describe('CatalogService', () => {
     });
 
     it('should handle database errors during similarity search', async () => {
-      jest.spyOn(service as any, 'openai', 'get').mockReturnValue({
+      (service as any).openai = {
         embeddings: {
           create: jest.fn().mockResolvedValue({
             data: [{ embedding: new Array(1536).fill(0.1) }],
           }),
         },
-      });
+      };
 
       mockPrismaService.$queryRaw.mockRejectedValue(
         new Error('Database error'),

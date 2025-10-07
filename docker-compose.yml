@@ -2,9 +2,9 @@ services:
   # Database service PostgresSQL image
   database:
     # image: postgres:latest
-    image: ankane/pgvector:latest
+    image: pgvector/pgvector:pg18-trixie
     environment:
-      POSTGRES_USER: user
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: catalog
     ports:
