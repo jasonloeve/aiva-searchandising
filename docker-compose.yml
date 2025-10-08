@@ -11,6 +11,11 @@ services:
       - "5432:5432"
     volumes:
       - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Backend service
   backend:
@@ -19,9 +24,14 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     env_file:
       - ./.env
+    environment:
+      # Override DATABASE_URL for Docker (use service name instead of localhost)
+      DATABASE_URL: "postgresql://postgres:password@database:5432/catalog?schema=public"
+    restart: unless-stopped
 
 volumes:
   database:

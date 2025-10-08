@@ -1,35 +1,50 @@
-# Use the official Node.js image as the base image
-FROM node:20
+# Build stage
+FROM node:20 AS builder
 
-# Set the Environment to production
-# ENV NODE_ENV=production
-
-# Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json to the working directory
+# Copy package files
 COPY package*.json ./
 
-# Install the application dependencies
-RUN npm install
+# Install all dependencies (including dev)
+RUN npm ci
 
-# Copy the rest of the application files
+# Copy source code and config files
 COPY . .
 
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build the NestJS application
-RUN npx nest build
+# Build the application
+RUN npm run build
 
-# Now prune dev dependencies (optional but recommended)
-RUN npm prune --production
+# Production stage
+FROM node:20-slim
 
-# Reset NODE_ENV to production for runtime
+# Install OpenSSL for Prisma
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production
+
+# Copy Prisma schema for migrations
+COPY prisma ./prisma
+
+# Copy built application from builder
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
+
+# Generate Prisma client in production (needed for runtime)
+RUN npx prisma generate
+
 ENV NODE_ENV=production
 
-# Expose the application port
 EXPOSE 3000
 
-# Command to run the application
-CMD ["node", "dist/main"]
+# Run migrations and start app
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
