@@ -221,6 +221,7 @@ export class CatalogService {
         try {
           const now = new Date();
 
+          // @NOTE - Investigate insert error cases
           await this.prisma.$executeRaw`
             INSERT INTO "Product" 
               ("shopifyId", title, description, tags, category, image, price, embedding, "createdAt", "updatedAt")
