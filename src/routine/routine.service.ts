@@ -1,22 +1,20 @@
-// @TODO - Need to rework this service, experiment with used prompt, look into adding similarity logging, investigate why some queries are returning a low count, possibly have to look into breaking up request then merge response.
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { HairProfileDto } from '../hair-profile/dto/hair-profile.dto';
 import { RoutineStep, RoutineResponse } from './interfaces/routine-step.interface';
 import { CatalogService } from '../catalog/catalog.service';
-import OpenAI from 'openai';
-import { ConfigService } from '@nestjs/config';
+import type { IAIProvider } from '../providers/ai/ai-provider.interface';
+import { Product } from '../providers/e-commerce/e-commerce.interface';
 import { ErrorResponseException, ProductNotFoundException } from '../common/exceptions/error-response.exception';
 
 @Injectable()
 export class RoutineService {
   private readonly logger = new Logger(RoutineService.name);
-  private readonly openai: OpenAI;
 
-  constructor(private readonly catalogService: CatalogService, private readonly configService: ConfigService) {
-    this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
-    });
-  }
+  constructor(
+    private readonly catalogService: CatalogService,
+    @Inject('IAIProvider')
+    private readonly aiProvider: IAIProvider,
+  ) {}
 
   async generateRoutine(profile: HairProfileDto): Promise<RoutineResponse> {
     try {
@@ -32,49 +30,49 @@ export class RoutineService {
         throw new ProductNotFoundException();
       }
 
-      // 3. Fetch full ShopifyProduct objects
-      const shopifyProducts = await this.catalogService.getProductsByIds(
+      // 3. Fetch full Product objects
+      const products = await this.catalogService.getProductsByIds(
         productResults.map(p => p.shopifyId)
       );
 
-      if (!shopifyProducts || shopifyProducts.length === 0) {
-        this.logger.warn('No Shopify products found');
+      if (!products || products.length === 0) {
+        this.logger.warn('No products found');
         throw new ProductNotFoundException();
       }
 
-      // 4. Generate personalized routine descriptions with OpenAI
+      // 4. Generate personalized routine descriptions with AI
       const routine: RoutineStep[] = [];
 
-    const steps = [
-      { 
-        step: 'Cleansing', 
-        filter: (p: typeof shopifyProducts[0]) => (p.category ?? '').toLowerCase().includes('shampoo') 
-      },
-      { 
-        step: 'Conditioning', 
-        filter: (p: typeof shopifyProducts[0]) => (p.category ?? '').toLowerCase().includes('conditioner') 
-      },
-      { 
-        step: 'Treatment & Styling', 
-        filter: (p: typeof shopifyProducts[0]) => {
-          const category = (p.category ?? '').toLowerCase();
-          return !category.includes('shampoo') && !category.includes('conditioner');
-        }
-      },
-    ];
+      const steps = [
+        {
+          step: 'Cleansing',
+          filter: (p: Product) => (p.category ?? '').toLowerCase().includes('shampoo')
+        },
+        {
+          step: 'Conditioning',
+          filter: (p: Product) => (p.category ?? '').toLowerCase().includes('conditioner')
+        },
+        {
+          step: 'Treatment & Styling',
+          filter: (p: Product) => {
+            const category = (p.category ?? '').toLowerCase();
+            return !category.includes('shampoo') && !category.includes('conditioner');
+          }
+        },
+      ];
 
-    for (const s of steps) {
-      const products = shopifyProducts.filter(s.filter);
+      for (const s of steps) {
+        const filteredProducts = products.filter(s.filter);
 
-      // Generate description using OpenAI prompt
-      const description = await this.generateStepDescription(s.step, profile, products);
+        // Generate description using AI provider
+        const description = await this.generateStepDescription(s.step, profile, filteredProducts);
 
-      routine.push({
-        step: s.step,
-        description,
-        products,
-      });
-    }
+        routine.push({
+          step: s.step,
+          description,
+          products: filteredProducts,
+        });
+      }
 
       return {
         message: 'Routine generated successfully',
@@ -88,7 +86,7 @@ export class RoutineService {
         throw error;
       }
 
-      // Handle OpenAI specific errors
+      // Handle AI specific errors
       if (error.name === 'APIError' || error.message?.includes('OpenAI')) {
         throw new ErrorResponseException('Failed to generate routine description', error);
       }
@@ -115,7 +113,7 @@ export class RoutineService {
     return parts.join(' ');
   }
 
-  private async generateStepDescription(step: string, profile: HairProfileDto, products: any[]): Promise<string> {
+  private async generateStepDescription(step: string, profile: HairProfileDto, products: Product[]): Promise<string> {
     try {
       const productTitles = products.map(p => p.title).join(', ') || 'No specific products';
 
@@ -136,23 +134,22 @@ export class RoutineService {
         Keep it concise and actionable.
       `;
 
-      this.logger.debug(`Calling OpenAI for step: ${step}`);
+      this.logger.debug(`Calling AI provider for step: ${step}`);
 
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 150,
-        temperature: 0.7,
-      });
+      const response = await this.aiProvider.generateChatCompletion(
+        [{ role: 'user', content: prompt }],
+        {
+          maxTokens: 150,
+          temperature: 0.7,
+        }
+      );
 
-      const content = response.choices?.[0]?.message?.content?.trim();
-
-      if (!content) {
-        this.logger.warn(`OpenAI returned empty response for step: ${step}`);
+      if (!response.content) {
+        this.logger.warn(`AI provider returned empty response for step: ${step}`);
         return `Complete the ${step} step using the recommended products.`;
       }
 
-      return content;
+      return response.content;
     } catch (error) {
       this.logger.error(`Failed to generate description for step: ${step}`, error);
       throw new ErrorResponseException(`Failed to generate ${step} description`, error);

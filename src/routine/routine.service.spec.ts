@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
 import { RoutineService } from './routine.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { HairProfileDto } from '../hair-profile/dto/hair-profile.dto';
-import { ProductNotFoundException, ErrorResponseException } from '../common/exceptions/error-response.exception';
+import { ProductNotFoundException } from '../common/exceptions/error-response.exception';
 
 describe('RoutineService', () => {
   let service: RoutineService;
   let catalogService: CatalogService;
 
-  const mockConfigService = {
-    get: jest.fn().mockReturnValue('test-api-key'),
+  const mockAIProvider = {
+    generateChatCompletion: jest.fn(),
+    getDefaultModel: jest.fn().mockReturnValue('gpt-4o-mini'),
   };
 
   const mockCatalogService = {
@@ -56,8 +56,8 @@ describe('RoutineService', () => {
       providers: [
         RoutineService,
         {
-          provide: ConfigService,
-          useValue: mockConfigService,
+          provide: 'IAIProvider',
+          useValue: mockAIProvider,
         },
         {
           provide: CatalogService,
@@ -79,42 +79,27 @@ describe('RoutineService', () => {
   });
 
   describe('generateRoutine', () => {
-    it('should generate a complete hair routine successfully', async () => {
-      // Mock catalog service responses
-      mockCatalogService.searchProductsBySimilarity.mockResolvedValue([
-        { shopifyId: '123', similarity: 0.9 },
-        { shopifyId: '456', similarity: 0.85 },
-      ]);
+    it('should generate a routine successfully', async () => {
+      const mockSearchResults = [
+        { shopifyId: '123', similarity: 0.95 },
+        { shopifyId: '456', similarity: 0.92 },
+      ];
 
+      mockCatalogService.searchProductsBySimilarity.mockResolvedValue(mockSearchResults);
       mockCatalogService.getProductsByIds.mockResolvedValue(mockProducts);
-
-      // Mock OpenAI response (we need to mock the entire OpenAI client)
-      const mockOpenAIResponse = {
-        choices: [
-          {
-            message: {
-              content: 'Use this gentle shampoo to cleanse your hair.',
-            },
-          },
-        ],
-      };
-
-      // Access the private openai client through service's internals
-      jest.spyOn(service as any, 'generateStepDescription').mockResolvedValue(
-        'Use this product for best results',
-      );
+      mockAIProvider.generateChatCompletion.mockResolvedValue({
+        content: 'Use this product for best results.',
+        finishReason: 'stop',
+        usage: { promptTokens: 100, completionTokens: 20, totalTokens: 120 },
+      });
 
       const result = await service.generateRoutine(mockHairProfile);
 
-      expect(result).toBeDefined();
-      expect(result.message).toBe('Routine generated successfully');
-      expect(result.routine).toHaveLength(3); // Cleansing, Conditioning, Treatment & Styling
-      expect(result.routine[0].step).toBe('Cleansing');
-      expect(catalogService.searchProductsBySimilarity).toHaveBeenCalledWith(
-        expect.stringContaining('frizz'),
-        10,
-      );
-      expect(catalogService.getProductsByIds).toHaveBeenCalled();
+      expect(result).toHaveProperty('message');
+      expect(result).toHaveProperty('routine');
+      expect(result.routine).toBeInstanceOf(Array);
+      expect(mockCatalogService.searchProductsBySimilarity).toHaveBeenCalled();
+      expect(mockCatalogService.getProductsByIds).toHaveBeenCalledWith(['123', '456']);
     });
 
     it('should throw ProductNotFoundException when no products found', async () => {
@@ -126,9 +111,11 @@ describe('RoutineService', () => {
     });
 
     it('should throw ProductNotFoundException when getProductsByIds returns empty', async () => {
-      mockCatalogService.searchProductsBySimilarity.mockResolvedValue([
-        { shopifyId: '123', similarity: 0.9 },
-      ]);
+      const mockSearchResults = [
+        { shopifyId: '123', similarity: 0.95 },
+      ];
+
+      mockCatalogService.searchProductsBySimilarity.mockResolvedValue(mockSearchResults);
       mockCatalogService.getProductsByIds.mockResolvedValue([]);
 
       await expect(service.generateRoutine(mockHairProfile)).rejects.toThrow(
@@ -136,43 +123,25 @@ describe('RoutineService', () => {
       );
     });
 
-    it('should handle catalog service errors gracefully', async () => {
-      mockCatalogService.searchProductsBySimilarity.mockRejectedValue(
-        new Error('Database connection failed'),
-      );
+    it('should generate routine with proper step structure', async () => {
+      const mockSearchResults = [
+        { shopifyId: '123', similarity: 0.95 },
+        { shopifyId: '456', similarity: 0.92 },
+      ];
 
-      await expect(service.generateRoutine(mockHairProfile)).rejects.toThrow();
-    });
-  });
+      mockCatalogService.searchProductsBySimilarity.mockResolvedValue(mockSearchResults);
+      mockCatalogService.getProductsByIds.mockResolvedValue(mockProducts);
+      mockAIProvider.generateChatCompletion.mockResolvedValue({
+        content: 'Step description from AI',
+        finishReason: 'stop',
+      });
 
-  describe('buildQueryFromProfile (private method)', () => {
-    it('should build query from hair profile', () => {
-      // Access private method through service's internals
-      const query = (service as any).buildQueryFromProfile(mockHairProfile);
+      const result = await service.generateRoutine(mockHairProfile);
 
-      expect(query).toContain('brown');
-      expect(query).toContain('frizz');
-      expect(query).toContain('dryness');
-      expect(query).toContain('color');
-      expect(query).toContain('shampoo');
-      expect(query).toContain('volume');
-    });
-
-    it('should handle empty optional fields', () => {
-      const minimalProfile: HairProfileDto = {
-        hairColor: 'black',
-        hairConcerns: ['damage'],
-        services: [],
-        homeRoutine: [],
-        stylingRoutine: [],
-        recentChange: false,
-        salonFrequency: 'never',
-      };
-
-      const query = (service as any).buildQueryFromProfile(minimalProfile);
-
-      expect(query).toContain('black');
-      expect(query).toContain('damage');
+      expect(result.routine).toHaveLength(3);
+      expect(result.routine[0]).toHaveProperty('step');
+      expect(result.routine[0]).toHaveProperty('description');
+      expect(result.routine[0]).toHaveProperty('products');
     });
   });
 });

@@ -1,182 +1,43 @@
-// @TODO - To be separated and simplified.
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
-import OpenAI from 'openai';
-import { PrismaService } from '../../prisma/prisma.service';
-import {
-  ShopifyProductNode,
-  ShopifyProduct,
-  ShopifyProductGraphQLResponse,
-  EmbedProductsResponseDto,
-  ShopifyPublicationGraphQLResponse,
-  ShopifyPublication,
-} from './interfaces/shopify-product.interface';
-import { ErrorResponseException, ShopifyException } from '../common/exceptions/error-response.exception';
+import type { IEmbeddingProvider } from '../providers/embedding/embedding.interface';
+import type { IECommerceProvider } from '../providers/e-commerce/e-commerce.interface';
+import { Product } from '../providers/e-commerce/e-commerce.interface';
+import type { IProductRepository } from '../repositories/product.repository.interface';
+import { EmbedProductsResponseDto } from './dto/embed-products.dto';
+import { ShopifyPublication } from './interfaces/shopify-product.interface';
 
 @Injectable()
 export class CatalogService {
   private readonly logger = new Logger(CatalogService.name);
-  private readonly openai: OpenAI;
-  private readonly shopifyEndpoint: string;
-  private readonly shopifyToken: string;
   private readonly shopifySalesChannelId: string;
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly httpService: HttpService,
+    @Inject('IEmbeddingProvider')
+    private readonly embeddingProvider: IEmbeddingProvider,
+    @Inject('IECommerceProvider')
+    private readonly ecommerceProvider: IECommerceProvider,
+    @Inject('IProductRepository')
+    private readonly productRepository: IProductRepository,
     private readonly configService: ConfigService,
   ) {
-    this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
-    });
-
-    const shopifyDomain = this.configService.get<string>('SHOPIFY_STORE_DOMAIN');
-    const shopifyApiVersion = this.configService.get<string>('SHOPIFY_API_VERSION');
-    this.shopifyToken = this.configService.get<string>('SHOPIFY_ADMIN_TOKEN')!;
     this.shopifySalesChannelId = this.configService.get<string>('SHOPIFY_SALES_CHANNEL_ID')!;
-
-    if (!shopifyDomain || !this.shopifyToken || !shopifyApiVersion) {
-      throw new Error('Missing required Shopify configuration');
-    }
-
-    this.shopifyEndpoint = `https://${shopifyDomain}/admin/api/${shopifyApiVersion}/graphql.json`;
   }
 
-  // /** Fetch all Shopify channel IDs (publications) */
-  // @NOTE - Utility built out to get channel IDs for filtering products by sales channel in the fetchProductsFromShopify method.
+  /** Fetch all Shopify channel IDs (publications) */
   async fetchShopifyPublications(): Promise<ShopifyPublication[]> {
-    this.logger.log('Fetching channel IDs (publications) from Shopify...');
-
-    const query = `
-      query getPublications {
-        publications(first: 100) {
-          nodes {
-            id
-            name
-          }
-        }
-      }
-    `;
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post<ShopifyPublicationGraphQLResponse>(
-          this.shopifyEndpoint,
-          { query },
-          {
-            headers: {
-              'X-Shopify-Access-Token': this.shopifyToken,
-              'Content-Type': 'application/json',
-            },
-            timeout: 30000,
-          },
-        ),
-      );
-
-      const publications = response.data.data.publications.nodes;
-
-      const channels = publications.map((pub: any) => ({
-        id: pub.id,
-        name: pub.name,
-      }));
-
-      this.logger.log(
-        `Fetched ${channels.length} channels from Shopify: ${channels
-          .map((c) => `${c.name} (${c.id})`)
-          .join(', ')}`,
-      );
-
-      return channels;
-    } catch (error) {
-      this.logger.error('Error fetching Shopify publications', error.stack);
-      throw new ShopifyException('Failed to fetch publications', error);
-    }
+    const publications = await this.ecommerceProvider.getPublications();
+    return publications.map((pub) => ({ id: pub.id, name: pub.name }));
   }
 
   /** Fetch all Shopify products (paginated) */
-  async fetchProductsFromShopify(): Promise<ShopifyProduct[]> {
-    const allProducts: ShopifyProduct[] = [];
-    let hasNextPage = true;
-    let endCursor: string | null = null;
-    const MAX_PRODUCTS = 8000; // Dev limit
-
-    this.logger.log('Fetching products from Shopify...');
-
-    while (hasNextPage && allProducts.length < MAX_PRODUCTS) {
-      const query = `
-        query getProducts($cursor: String) {
-          products(
-            first: 250,
-            query: "publication_ids:${this.shopifySalesChannelId} AND status:active",
-            after: $cursor
-          ) {
-            pageInfo { hasNextPage, endCursor }
-            nodes {
-              id
-              title
-              description
-              productType
-              tags
-              images(first: 1) { edges { node { url } } }
-              variants(first: 1) { edges { node { price } } }
-            }
-          }
-        }
-      `;
-
-      try {
-        const response = await firstValueFrom(
-          this.httpService.post<ShopifyProductGraphQLResponse>(
-            this.shopifyEndpoint,
-            { query, variables: { cursor: endCursor } },
-            {
-              headers: {
-                'X-Shopify-Access-Token': this.shopifyToken,
-                'Content-Type': 'application/json',
-              },
-              timeout: 30000,
-            },
-          ),
-        );
-
-        const pageData = response.data.data.products;
-        allProducts.push(...this.transformShopifyProducts(pageData.nodes));
-
-        hasNextPage = pageData.pageInfo.hasNextPage;
-        endCursor = pageData.pageInfo.endCursor;
-
-        if (allProducts.length >= MAX_PRODUCTS) break;
-        if (hasNextPage) await this.delay(1000);
-      } catch (error) {
-        this.logger.error('Error fetching Shopify products', error.stack);
-        throw new HttpException(
-          'Error fetching products from Shopify',
-          HttpStatus.SERVICE_UNAVAILABLE,
-        );
-      }
-    }
-
-    this.logger.log(`Fetched ${allProducts.length} products from Shopify`);
-    return allProducts.slice(0, MAX_PRODUCTS);
-  }
-
-  private transformShopifyProducts(nodes: ShopifyProductNode[]): ShopifyProduct[] {
-    return nodes.map((node) => ({
-      shopifyId: node.id,
-      title: node.title || '',
-      description: node.description || '',
-      tags: Array.isArray(node.tags) ? node.tags : [],
-      category: node.productType || '',
-      image: node.images?.edges?.[0]?.node?.url || null,
-      price: node.variants?.edges?.[0]?.node?.price || null,
-    }));
+  async fetchProductsFromShopify(): Promise<Product[]> {
+    return this.ecommerceProvider.fetchAllProducts(8000, this.shopifySalesChannelId);
   }
 
   /** Main embedding & storage function (batch processing) */
   async embedAndStoreProducts(): Promise<EmbedProductsResponseDto> {
-    const start = Date.now(); // ⏱️ start timer
+    const start = Date.now();
 
     const products = await this.fetchProductsFromShopify();
 
@@ -190,19 +51,16 @@ export class CatalogService {
     let successCount = 0;
 
     for (let i = 0; i < products.length; i += batchSize) {
-      const batchStart = Date.now(); // per-batch timer
+      const batchStart = Date.now();
       const batch = products.slice(i, i + batchSize);
       const texts = batch.map((p) => this.createEmbeddingText(p));
 
-      let embeddingsResponse;
+      let embeddings: number[][];
       try {
-        embeddingsResponse = await this.openai.embeddings.create({
-          model: 'text-embedding-3-small',
-          input: texts,
-        });
+        embeddings = await this.embeddingProvider.generateEmbeddings(texts);
       } catch (err) {
         this.logger.error('OpenAI embedding error', err.stack);
-        // retry current batch once
+        // Retry current batch once
         await this.delay(2000);
         i -= batchSize;
         continue;
@@ -210,7 +68,7 @@ export class CatalogService {
 
       for (let j = 0; j < batch.length; j++) {
         const product = batch[j];
-        const embedding = embeddingsResponse.data[j]?.embedding;
+        const embedding = embeddings[j];
 
         if (!embedding || !Array.isArray(embedding)) {
           errors.push(`Invalid embedding for product ${product.title}`);
@@ -219,26 +77,7 @@ export class CatalogService {
         }
 
         try {
-          const now = new Date();
-
-          // @NOTE - Investigate insert error cases
-          await this.prisma.$executeRaw`
-            INSERT INTO "Product" 
-              ("shopifyId", title, description, tags, category, image, price, embedding, "createdAt", "updatedAt")
-            VALUES
-              (${product.shopifyId}, ${product.title}, ${product.description}, ${product.tags}, ${product.category ?? ''}, ${product.image ?? ''}, ${product.price ?? ''}, ${embedding}::vector, ${now}, ${now})
-            ON CONFLICT ("shopifyId") DO UPDATE
-            SET title = EXCLUDED.title,
-                description = EXCLUDED.description,
-                tags = EXCLUDED.tags,
-                category = COALESCE(EXCLUDED.category, ${product.category ?? ''}),
-                image = COALESCE(EXCLUDED.image, ${product.image ?? ''}),
-                price = COALESCE(EXCLUDED.price, ${product.price ?? ''}),
-                embedding = EXCLUDED.embedding,
-                "updatedAt" = ${now},
-                "createdAt" = ${now};
-          `;
-          
+          await this.productRepository.upsert(product, embedding);
           successCount++;
         } catch (dbError) {
           errors.push(`DB error for product ${product.title}: ${dbError.message}`);
@@ -248,7 +87,7 @@ export class CatalogService {
 
       const batchEnd = Date.now();
       this.logger.log(
-        `✅ Processed batch ${i / batchSize + 1} in ${(batchEnd - batchStart) / 1000}s`
+        `✅ Processed batch ${i / batchSize + 1} in ${(batchEnd - batchStart) / 1000}s`,
       );
 
       if (i + batchSize < products.length) await this.delay(1000);
@@ -268,7 +107,7 @@ export class CatalogService {
   }
 
   /** Generate embedding text from product */
-  private createEmbeddingText(product: ShopifyProduct): string {
+  private createEmbeddingText(product: Product): string {
     const parts = [
       product.title,
       product.description,
@@ -279,89 +118,22 @@ export class CatalogService {
     return parts.join(' ').substring(0, 8000);
   }
 
-  private delay(ms: number) {
+  private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /** Get products by category */
-  async getProductsByCategory(category: string): Promise<ShopifyProduct[]> {
-    const products = await this.prisma.product.findMany({
-      where: { category: { equals: category, mode: 'insensitive' } },
-      select: { shopifyId: true, title: true, description: true, tags: true, category: true, image: true, price: true },
-    });
-
-    // Ensure category is string (not null)
-    return products.map((p) => ({
-      ...p,
-      category: p.category ?? '',
-    }));
+  async getProductsByCategory(category: string): Promise<Product[]> {
+    return this.productRepository.findByCategory(category);
   }
 
-  /** Search products by similarity using OpenAI embedding */
+  /** Search products by similarity using embedding */
   async searchProductsBySimilarity(query: string, limit: number = 10): Promise<any[]> {
-    try {
-      const embeddingResponse = await this.openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: query,
-      });
-      const queryEmbedding = embeddingResponse.data[0].embedding;
-
-      // Use $queryRaw with tagged template for safe parameterization
-      const products = await this.prisma.$queryRaw<any[]>`
-        SELECT
-          "shopifyId",
-          title,
-          description,
-          tags,
-          category,
-          image,
-          price,
-          1 - (embedding <=> ${queryEmbedding}::vector) AS similarity
-        FROM "Product"
-        ORDER BY embedding <=> ${queryEmbedding}::vector
-        LIMIT ${limit}::BIGINT
-      `;
-
-      return products;
-    } catch (error) {
-      this.logger.error('Failed to search products by similarity', error.stack);
-
-      // Check if it's an OpenAI error
-      if (error.message?.includes('OpenAI') || error.name === 'APIError') {
-        throw new ErrorResponseException('Failed to generate embedding for search', error);
-      }
-
-      throw new HttpException(
-        'Failed to search products',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const queryEmbedding = await this.embeddingProvider.generateEmbedding(query);
+    return this.productRepository.findBySimilarity(queryEmbedding, limit);
   }
 
-  async getProductsByIds(ids: string[]): Promise<ShopifyProduct[]> {
-    try {
-      if (!ids || ids.length === 0) {
-        this.logger.warn('getProductsByIds called with empty array');
-        return [];
-      }
-
-      const products = await this.prisma.product.findMany({
-        where: {
-          shopifyId: { in: ids },
-        },
-      });
-
-      if (products.length === 0) {
-        this.logger.warn(`No products found for IDs: ${ids.join(', ')}`);
-      }
-
-      return products;
-    } catch (error) {
-      this.logger.error(`Failed to fetch products by IDs`, error.stack);
-      throw new HttpException(
-        'Failed to fetch products',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+  async getProductsByIds(ids: string[]): Promise<Product[]> {
+    return this.productRepository.findByIds(ids);
   }
 }
