@@ -4,7 +4,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from '../prisma/prisma.module';
-import { RoutineModule } from './routine/routine.module';
+import { HaircareModule } from './api/haircare/haircare.module';
+import { HealthModule } from './api/health/health.module';
 import { CatalogModule } from './catalog/catalog.module';
 
 @Module({
@@ -23,7 +24,8 @@ import { CatalogModule } from './catalog/catalog.module';
       ],
     }),
     PrismaModule,
-    RoutineModule,
+    HealthModule,
+    HaircareModule,
     CatalogModule,
   ],
   providers: [

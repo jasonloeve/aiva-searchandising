@@ -1,6 +1,10 @@
 import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
 
-export class HairProfileDto {
+/**
+ * DTO for haircare customer profile
+ * Used for POST /api/haircare endpoint
+ */
+export class HaircareProfileDto {
   @IsString()
   hairColor: string;
 

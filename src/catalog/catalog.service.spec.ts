@@ -191,4 +191,187 @@ describe('CatalogService', () => {
       expect(mockECommerceProvider.fetchAllProducts).toHaveBeenCalledWith(8000, 'test-channel-id');
     });
   });
+
+  describe('embedAndStoreProducts', () => {
+    it('should embed and store products successfully', async () => {
+      const mockProducts = [
+        {
+          shopifyId: '1',
+          title: 'Product 1',
+          description: 'Description 1',
+          tags: ['tag1'],
+          category: 'Category1',
+          image: 'image1',
+          price: '29.99',
+        },
+        {
+          shopifyId: '2',
+          title: 'Product 2',
+          description: 'Description 2',
+          tags: ['tag2'],
+          category: 'Category2',
+          image: 'image2',
+          price: '39.99',
+        },
+      ];
+
+      mockECommerceProvider.fetchAllProducts.mockResolvedValue(mockProducts);
+      mockEmbeddingProvider.generateEmbeddings.mockResolvedValue([
+        new Array(1536).fill(0.1),
+        new Array(1536).fill(0.2),
+      ]);
+      mockProductRepository.upsert.mockResolvedValue(undefined);
+
+      jest.spyOn<any, any>(service, 'delay').mockResolvedValue(undefined);
+
+      const result = await service.embedAndStoreProducts();
+
+      expect(result.productsProcessed).toBe(2);
+      expect(result.message).toContain('Successfully embedded 2');
+      expect(mockEmbeddingProvider.generateEmbeddings).toHaveBeenCalled();
+      expect(mockProductRepository.upsert).toHaveBeenCalledTimes(2);
+    });
+
+    it('should return message when no products found', async () => {
+      mockECommerceProvider.fetchAllProducts.mockResolvedValue([]);
+
+      const result = await service.embedAndStoreProducts();
+
+      expect(result.message).toBe('No products found to embed');
+      expect(result.productsProcessed).toBe(0);
+      expect(mockEmbeddingProvider.generateEmbeddings).not.toHaveBeenCalled();
+    });
+
+    it('should handle embedding errors and retry', async () => {
+      const mockProducts = [
+        {
+          shopifyId: '1',
+          title: 'Product 1',
+          description: 'Description 1',
+          tags: ['tag1'],
+          category: 'Category1',
+          image: 'image1',
+          price: '29.99',
+        },
+      ];
+
+      mockECommerceProvider.fetchAllProducts.mockResolvedValue(mockProducts);
+      mockEmbeddingProvider.generateEmbeddings
+        .mockRejectedValueOnce(new Error('OpenAI error'))
+        .mockResolvedValueOnce([new Array(1536).fill(0.1)]);
+      mockProductRepository.upsert.mockResolvedValue(undefined);
+
+      jest.spyOn<any, any>(service, 'delay').mockResolvedValue(undefined);
+
+      const result = await service.embedAndStoreProducts();
+
+      expect(result.productsProcessed).toBe(1);
+      expect(mockEmbeddingProvider.generateEmbeddings).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle invalid embeddings', async () => {
+      const mockProducts = [
+        {
+          shopifyId: '1',
+          title: 'Product 1',
+          description: 'Description 1',
+          tags: ['tag1'],
+          category: 'Category1',
+          image: 'image1',
+          price: '29.99',
+        },
+        {
+          shopifyId: '2',
+          title: 'Product 2',
+          description: 'Description 2',
+          tags: ['tag2'],
+          category: 'Category2',
+          image: 'image2',
+          price: '39.99',
+        },
+      ];
+
+      mockECommerceProvider.fetchAllProducts.mockResolvedValue(mockProducts);
+      mockEmbeddingProvider.generateEmbeddings.mockResolvedValue([
+        new Array(1536).fill(0.1),
+        null, // Invalid embedding
+      ]);
+      mockProductRepository.upsert.mockResolvedValue(undefined);
+
+      jest.spyOn<any, any>(service, 'delay').mockResolvedValue(undefined);
+
+      const result = await service.embedAndStoreProducts();
+
+      expect(result.productsProcessed).toBe(1);
+      expect(result.errors).toBeDefined();
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(mockProductRepository.upsert).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle database errors', async () => {
+      const mockProducts = [
+        {
+          shopifyId: '1',
+          title: 'Product 1',
+          description: 'Description 1',
+          tags: ['tag1'],
+          category: 'Category1',
+          image: 'image1',
+          price: '29.99',
+        },
+      ];
+
+      mockECommerceProvider.fetchAllProducts.mockResolvedValue(mockProducts);
+      mockEmbeddingProvider.generateEmbeddings.mockResolvedValue([
+        new Array(1536).fill(0.1),
+      ]);
+      mockProductRepository.upsert.mockRejectedValue(new Error('Database error'));
+
+      jest.spyOn<any, any>(service, 'delay').mockResolvedValue(undefined);
+
+      const result = await service.embedAndStoreProducts();
+
+      expect(result.productsProcessed).toBe(0);
+      expect(result.errors).toBeDefined();
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0]).toContain('DB error');
+    });
+
+    it('should process large batches correctly', async () => {
+      const mockProducts = Array(25)
+        .fill(null)
+        .map((_, i) => ({
+          shopifyId: `${i + 1}`,
+          title: `Product ${i + 1}`,
+          description: `Description ${i + 1}`,
+          tags: [`tag${i + 1}`],
+          category: `Category${i + 1}`,
+          image: `image${i + 1}`,
+          price: '29.99',
+        }));
+
+      mockECommerceProvider.fetchAllProducts.mockResolvedValue(mockProducts);
+
+      const mockEmbeddings1 = Array(20)
+        .fill(null)
+        .map(() => new Array(1536).fill(0.1));
+      const mockEmbeddings2 = Array(5)
+        .fill(null)
+        .map(() => new Array(1536).fill(0.1));
+
+      mockEmbeddingProvider.generateEmbeddings
+        .mockResolvedValueOnce(mockEmbeddings1)
+        .mockResolvedValueOnce(mockEmbeddings2);
+
+      mockProductRepository.upsert.mockResolvedValue(undefined);
+
+      jest.spyOn<any, any>(service, 'delay').mockResolvedValue(undefined);
+
+      const result = await service.embedAndStoreProducts();
+
+      expect(result.productsProcessed).toBe(25);
+      expect(mockEmbeddingProvider.generateEmbeddings).toHaveBeenCalledTimes(2);
+      expect(mockProductRepository.upsert).toHaveBeenCalledTimes(25);
+    });
+  });
 });
